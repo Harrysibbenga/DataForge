@@ -1,0 +1,111 @@
+## Setting Up Stripe Webhooks for DataForge
+
+This guide will help you set up Stripe webhooks to properly handle subscription events in your DataForge application.
+
+### 1. Prerequisites
+
+- A Stripe account (https://dashboard.stripe.com/register)
+- Your DataForge application deployed with a publicly accessible URL
+- Stripe CLI for local development testing (optional but recommended)
+
+### 2. Setting Up Webhooks in Stripe Dashboard
+
+1. Log in to your [Stripe Dashboard](https://dashboard.stripe.com)
+2. Navigate to **Developers** > **Webhooks** in the sidebar
+3. Click **Add endpoint**
+4. Enter your webhook endpoint URL:
+   - Production: `https://yourdomain.com/api/payment/webhook`
+   - Development: `https://your-ngrok-url.ngrok.io/api/payment/webhook`
+5. Under **Events to send**, select the following events:
+   - `checkout.session.completed`
+   - `customer.subscription.created`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+   - `invoice.paid`
+   - `invoice.payment_failed`
+6. Click **Add endpoint** to create the webhook
+
+### 3. Obtaining the Webhook Secret
+
+After creating your webhook, you'll need to get the signing secret:
+
+1. In the Stripe Dashboard, go to **Developers** > **Webhooks**
+2. Click on the webhook endpoint you just created
+3. In the **Signing secret** section, click **Reveal**
+4. Copy the signing secret (it starts with `whsec_`)
+5. Add this secret to your environment variables:
+   ```
+   STRIPE_WEBHOOK_SECRET=whsec_your_secret_here
+   ```
+
+### 4. Testing Webhooks Locally (Development)
+
+For local development, you can use the Stripe CLI to forward webhook events to your local server:
+
+1. [Install the Stripe CLI](https://stripe.com/docs/stripe-cli)
+2. Log in to your Stripe account via the CLI:
+   ```bash
+   stripe login
+   ```
+3. Start forwarding webhook events:
+   ```bash
+   stripe listen --forward-to localhost:8000/api/payment/webhook
+   ```
+4. The CLI will provide a webhook secret for testing. Add this to your local environment:
+   ```
+   STRIPE_WEBHOOK_SECRET=whsec_your_testing_secret_here
+   ```
+5. In a separate terminal, you can trigger test events:
+   ```bash
+   stripe trigger customer.subscription.created
+   ```
+
+### 5. Verifying Webhook Functionality
+
+To verify that your webhooks are working correctly:
+
+1. Make a test subscription in your application
+2. Check the Stripe Dashboard under **Developers** > **Webhooks** > **Your Endpoint** > **Recent events**
+3. Check your application logs for webhook processing messages
+4. Verify that the subscription data was correctly updated in your database
+
+### 6. Handling Webhook Failures
+
+If a webhook fails:
+
+1. Stripe will retry the webhook automatically with an exponential backoff (after 1 minute, 10 minutes, 1 hour, etc.)
+2. You can manually resend a failed webhook from the Stripe Dashboard
+3. Check your application logs for any errors occurring during webhook processing
+4. Ensure your webhook endpoint returns a 2xx status code when processing is successful
+
+### 7. Security Considerations
+
+- Never log the full request payload from Stripe (it may contain sensitive information)
+- Always verify the webhook signature using the Stripe library
+- Ensure your webhook endpoint is only accessible via HTTPS
+- Consider IP filtering to only allow requests from Stripe IP addresses
+
+### 8. Required Environment Variables
+
+Make sure your application has these environment variables set:
+
+```
+STRIPE_SECRET_KEY=sk_your_secret_key
+STRIPE_PUBLISHABLE_KEY=pk_your_publishable_key
+STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
+STRIPE_BASIC_PRICE_ID=price_your_basic_price_id
+STRIPE_PRO_PRICE_ID=price_your_pro_price_id
+STRIPE_ENTERPRISE_PRICE_ID=price_your_enterprise_price_id
+```
+
+### 9. Troubleshooting
+
+If webhooks aren't working properly:
+
+1. Check that your endpoint is publicly accessible
+2. Verify the webhook secret is correctly set in your environment
+3. Look for any errors in your application logs
+4. Examine the event in the Stripe Dashboard to see if it was delivered and what response was received
+5. Try sending a test webhook event from the Stripe Dashboard
+
+For more information, see the [Stripe Webhooks documentation](https://stripe.com/docs/webhooks).

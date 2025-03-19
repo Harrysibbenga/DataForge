@@ -310,3 +310,27 @@ async def dashboard_page(request: Request):
 async def settings_page(request: Request):
     """Redirect to dashboard with settings tab active"""
     return RedirectResponse(url="/dashboard#profile")
+
+# Email verification route
+@app.get("/verify-email", response_class=HTMLResponse)
+async def verify_email_page(request: Request):
+    """Render the email verification page"""
+    return templates.TemplateResponse("verify-email.html", {"request": request})
+
+# Resend verification email route
+@app.get("/resend-verification", response_class=HTMLResponse)
+async def resend_verification_page(request: Request):
+    """Render the resend verification page"""
+    return templates.TemplateResponse("resend-verification.html", {"request": request})
+
+# Forgot password route
+@app.get("/forgot-password", response_class=HTMLResponse)
+async def forgot_password_page(request: Request):
+    """Render the forgot password page"""
+    return templates.TemplateResponse("forgot-password.html", {"request": request})
+
+# Reset password route
+@app.get("/reset-password", response_class=HTMLResponse)
+async def reset_password_page(request: Request):
+    """Render the reset password page"""
+    return templates.TemplateResponse("reset-password.html", {"request": request})

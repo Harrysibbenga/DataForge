@@ -8,6 +8,7 @@ from typing import Dict, Any, List, Optional
 import logging
 from datetime import datetime, timedelta
 import os
+import stripe
 
 from app.db.config import get_db
 from app.db.models import User
@@ -274,3 +275,219 @@ async def get_login_history(
             "success": True
         }
     ]
+    
+@router.get("/subscription/history")
+async def get_subscription_history(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+    limit: int = 10
+) -> List[Dict[str, Any]]:
+    """Get user's subscription history"""
+    history = crud.get_subscription_history(db, current_user.id, limit)
+    
+    # Format for response
+    result = []
+    for entry in history:
+        result.append({
+            "id": entry.id,
+            "action": entry.action,
+            "action_date": entry.action_date,
+            "plan": entry.plan,
+            "previous_plan": entry.previous_plan,
+            "status": entry.status,
+            "metadata": entry.metadata
+        })
+    
+    return result
+
+@router.post("/subscription/downgrade")
+async def downgrade_subscription(
+    plan: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Schedule a subscription downgrade for the end of the billing period
+    
+    Args:
+        plan: New plan tier (basic, free)
+    """
+    # Validate plan
+    valid_plans = ["free", "basic"]
+    if plan not in valid_plans:
+        raise HTTPException(status_code=400, detail="Invalid plan for downgrade")
+    
+    # Get subscription
+    subscription = crud.get_user_subscription(db, current_user.id)
+    if not subscription:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+    
+    # Check current plan
+    current_plan = subscription.plan
+    if current_plan in ["free", "basic"] and plan == "free":
+        # Can't downgrade from basic to free
+        raise HTTPException(status_code=400, detail="Cannot downgrade further")
+    
+    if current_plan == plan:
+        return {"status": "no_change", "message": f"You are already on the {plan} plan"}
+    
+    # Schedule the downgrade
+    subscription.planned_downgrade_to = plan
+    
+    # Record in history
+    crud.record_subscription_history(
+        db=db,
+        user_id=current_user.id,
+        subscription_id=subscription.id,
+        stripe_subscription_id=subscription.stripe_subscription_id,
+        plan=subscription.plan,
+        previous_plan=None,
+        action="downgrade_scheduled",
+        status="active",
+        metadata={
+            "downgrade_to": plan,
+            "scheduled_date": datetime.now().isoformat(),
+            "effective_date": subscription.end_date.isoformat() if subscription.end_date else None
+        }
+    )
+    
+    db.commit()
+    
+    return {
+        "status": "scheduled",
+        "message": f"Your plan will be downgraded to {plan} at the end of your current billing period",
+        "effective_date": subscription.end_date
+    }
+
+@router.post("/subscription/cancel")
+async def cancel_user_subscription(
+    at_period_end: bool = True,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Cancel user subscription
+    
+    Args:
+        at_period_end: If True, cancel at the end of the billing period; 
+                      if False, cancel immediately
+    """
+    # This endpoint should redirect to the payment_routes.py implementation
+    try:
+        from app.api.payment_routes import cancel_user_subscription as cancel_subscription_impl
+        
+        # Call the implementation in payment_routes.py
+        return await cancel_subscription_impl(at_period_end, current_user, db)
+    
+    except Exception as e:
+        logging.error(f"Error canceling subscription: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/billing")
+async def get_billing_details(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """Get user's billing details"""
+    # Get subscription
+    subscription = crud.get_user_subscription(db, current_user.id)
+    if not subscription:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+    
+    # Get subscription details from Stripe if available
+    stripe_details = {}
+    if subscription.stripe_subscription_id:
+        try:
+            from app.payment.stripe_handler import get_subscription_details
+            stripe_details = get_subscription_details(subscription.stripe_subscription_id)
+        except Exception as e:
+            logging.error(f"Error retrieving Stripe subscription: {str(e)}")
+            # Continue without Stripe details
+    
+    # Format subscription info
+    subscription_info = {
+        "id": subscription.id,
+        "plan": subscription.plan,
+        "is_active": subscription.is_active,
+        "start_date": subscription.start_date,
+        "end_date": subscription.end_date,
+        "conversion_count": subscription.conversion_count,
+        "conversion_limit": subscription.conversion_limit,
+        "file_size_limit_mb": subscription.file_size_limit_mb,
+        "planned_downgrade_to": subscription.planned_downgrade_to,
+    }
+    
+    # Get recent invoices from Stripe if available
+    invoices = []
+    if subscription.stripe_customer_id:
+        try:
+            import stripe
+            stripe_invoices = stripe.Invoice.list(
+                customer=subscription.stripe_customer_id,
+                limit=5
+            )
+            
+            for invoice in stripe_invoices.data:
+                invoices.append({
+                    "id": invoice.id,
+                    "number": invoice.number,
+                    "amount_due": invoice.amount_due / 100,  # Convert cents to dollars
+                    "amount_paid": invoice.amount_paid / 100,
+                    "currency": invoice.currency,
+                    "status": invoice.status,
+                    "created": datetime.fromtimestamp(invoice.created),
+                    "due_date": datetime.fromtimestamp(invoice.due_date) if invoice.due_date else None,
+                    "hosted_invoice_url": invoice.hosted_invoice_url,
+                })
+        except Exception as e:
+            logging.error(f"Error retrieving Stripe invoices: {str(e)}")
+            # Continue without invoice details
+    
+    return {
+        "subscription": subscription_info,
+        "stripe": stripe_details,
+        "invoices": invoices,
+        "payment_method": None  # Would be populated with actual payment method in production
+    }
+
+@router.get("/subscription/invoices")
+async def get_invoices(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+    limit: int = 10
+) -> List[Dict[str, Any]]:
+    """Get user's invoice history"""
+    # Get subscription
+    subscription = crud.get_user_subscription(db, current_user.id)
+    if not subscription or not subscription.stripe_customer_id:
+        return []
+    
+    # Get invoices from Stripe
+    invoices = []
+    try:
+        import stripe
+        stripe_invoices = stripe.Invoice.list(
+            customer=subscription.stripe_customer_id,
+            limit=limit
+        )
+        
+        for invoice in stripe_invoices.data:
+            invoices.append({
+                "id": invoice.id,
+                "number": invoice.number,
+                "amount_due": invoice.amount_due / 100,  # Convert cents to dollars
+                "amount_paid": invoice.amount_paid / 100,
+                "currency": invoice.currency,
+                "status": invoice.status,
+                "created": datetime.fromtimestamp(invoice.created),
+                "due_date": datetime.fromtimestamp(invoice.due_date) if invoice.due_date else None,
+                "hosted_invoice_url": invoice.hosted_invoice_url,
+                "invoice_pdf": invoice.invoice_pdf,
+                "period_start": datetime.fromtimestamp(invoice.period_start) if invoice.period_start else None,
+                "period_end": datetime.fromtimestamp(invoice.period_end) if invoice.period_end else None,
+            })
+    except Exception as e:
+        logging.error(f"Error retrieving Stripe invoices: {str(e)}")
+        # Return empty list on error
+    
+    return invoices

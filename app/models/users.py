@@ -1,21 +1,56 @@
 """
-app/models/users.py - User data models
+app/models/users.py - Updated user models for enhanced authentication
 """
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 import uuid
+import re
 
 class UserCreate(BaseModel):
     """Schema for user registration"""
     email: EmailStr
     password: str = Field(..., min_length=8)
-    full_name: str
+    full_name: str = Field(..., min_length=2)
+    
+    @validator('password')
+    def password_strength(cls, v):
+        """Validate password strength"""
+        # At least 8 characters, one uppercase, one lowercase, one number
+        if not re.search(r'[A-Z]', v):
+            raise ValueError('Password must contain at least one uppercase letter')
+        if not re.search(r'[a-z]', v):
+            raise ValueError('Password must contain at least one lowercase letter')
+        if not re.search(r'[0-9]', v):
+            raise ValueError('Password must contain at least one number')
+        return v
 
 class UserLogin(BaseModel):
     """Schema for user login"""
     email: EmailStr
     password: str
+    remember_me: bool = False
+
+class PasswordResetRequest(BaseModel):
+    """Schema for password reset request"""
+    email: EmailStr
+
+class PasswordReset(BaseModel):
+    """Schema for password reset"""
+    token: str
+    new_password: str = Field(..., min_length=8)
+    
+    @validator('new_password')
+    def password_strength(cls, v):
+        """Validate password strength"""
+        # At least 8 characters, one uppercase, one lowercase, one number
+        if not re.search(r'[A-Z]', v):
+            raise ValueError('Password must contain at least one uppercase letter')
+        if not re.search(r'[a-z]', v):
+            raise ValueError('Password must contain at least one lowercase letter')
+        if not re.search(r'[0-9]', v):
+            raise ValueError('Password must contain at least one number')
+        return v
 
 class UserSubscription(BaseModel):
     """Schema for user subscription details"""

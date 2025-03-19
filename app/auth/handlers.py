@@ -166,3 +166,95 @@ async def get_user_from_request(
                 device = "Linux"
     
     return user
+
+# Add these additional functions to your auth/handlers.py file
+
+async def get_optional_current_user(
+    token: Optional[str] = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+) -> Optional[User]:
+    """
+    Get the current user if authenticated, without requiring authentication
+    
+    This is useful for routes that work with or without authentication.
+    Returns None if no valid token is provided.
+    """
+    if not token:
+        return None
+        
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            return None
+        token_data = TokenData(email=email)
+    except (JWTError, ValidationError):
+        return None
+    
+    user = crud.get_user_by_email(db, token_data.email)
+    if not user:
+        return None
+    
+    return user
+
+async def validate_api_key_permissions(
+    required_permissions: List[str],
+    api_key: str = Depends(api_key_header),
+    db: Session = Depends(get_db)
+) -> bool:
+    """
+    Validate that an API key has the required permissions
+    
+    Args:
+        required_permissions: List of permission strings required (e.g., ["convert", "read_stats"])
+        api_key: API key from header
+        db: Database session
+        
+    Returns:
+        True if the API key has all required permissions, False otherwise
+    """
+    if not api_key:
+        return False
+    
+    # Get API key from database
+    db_api_key = crud.get_api_key_by_key(db, api_key)
+    if not db_api_key:
+        return False
+    
+    # Get permissions
+    permissions = db_api_key.permissions or {}
+    
+    # Check if all required permissions are present and set to True
+    for permission in required_permissions:
+        if not permissions.get(permission, False):
+            return False
+    
+    # Update last used timestamp
+    db_api_key.last_used = datetime.now()
+    db.commit()
+    
+    return True
+
+def get_token_from_cookie(request: Request) -> Optional[str]:
+    """
+    Extract JWT token from cookies for alternative authentication method
+    
+    This allows "remember me" functionality using cookies
+    """
+    token = request.cookies.get("access_token")
+    return token
+
+def get_ip_info(ip_address: str) -> Dict[str, Any]:
+    """
+    Get information about an IP address using a geolocation service
+    
+    In a production environment, you would integrate with a real
+    geolocation service. This is a placeholder implementation.
+    """
+    # Placeholder - in a real app, you'd call a geolocation API
+    return {
+        "country": "Unknown",
+        "city": "Unknown",
+        "region": "Unknown",
+        "location": "Unknown"
+    }

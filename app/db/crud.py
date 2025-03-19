@@ -6,8 +6,7 @@ from sqlalchemy import func, desc
 from typing import Dict, List, Optional, Any, Tuple
 import uuid
 from datetime import datetime, timedelta
-
-from app.db.models import User, Subscription, ApiKey, Conversion, LoginHistory
+from app.db.models import User, Subscription, ApiKey, Conversion, LoginHistory, SubscriptionHistory
 from app.auth.handlers import get_password_hash, verify_password, generate_api_key
 
 # User operations
@@ -380,3 +379,382 @@ def get_conversion_stats(db: Session, user_id: str) -> Dict[str, Any]:
         "format_distribution": format_distribution,
         "source_distribution": source_distribution
     }
+
+
+"""
+Updates to app/db/crud.py for subscription history functionality
+"""
+
+# Add these new functions to your crud.py file
+
+def record_subscription_history(
+    db: Session,
+    user_id: str,
+    subscription_id: str,
+    stripe_subscription_id: Optional[str],
+    plan: str,
+    previous_plan: Optional[str],
+    action: str,
+    status: str,
+    metadata: Optional[Dict[str, Any]] = None
+) -> SubscriptionHistory:
+    """
+    Record a subscription history entry
+    
+    Args:
+        db: Database session
+        user_id: User ID
+        subscription_id: Subscription ID
+        stripe_subscription_id: Stripe subscription ID (optional)
+        plan: Current plan
+        previous_plan: Previous plan (optional)
+        action: Action type (created, updated, cancelled, etc.)
+        status: Status of the subscription
+        metadata: Additional metadata (optional)
+        
+    Returns:
+        The created subscription history entry
+    """
+    history_entry = SubscriptionHistory(
+        user_id=user_id,
+        subscription_id=subscription_id,
+        stripe_subscription_id=stripe_subscription_id,
+        plan=plan,
+        previous_plan=previous_plan,
+        action=action,
+        status=status,
+        metadata=metadata or {}
+    )
+    
+    db.add(history_entry)
+    db.commit()
+    db.refresh(history_entry)
+    
+    return history_entry
+
+def get_subscription_history(
+    db: Session,
+    user_id: str,
+    limit: int = 10
+) -> List[SubscriptionHistory]:
+    """
+    Get subscription history for a user
+    
+    Args:
+        db: Database session
+        user_id: User ID
+        limit: Maximum number of entries to return
+        
+    Returns:
+        List of subscription history entries
+    """
+    return db.query(SubscriptionHistory)\
+        .filter(SubscriptionHistory.user_id == user_id)\
+        .order_by(SubscriptionHistory.action_date.desc())\
+        .limit(limit)\
+        .all()
+
+def update_subscription_with_history(
+    db: Session,
+    user_id: str,
+    action: str,
+    updates: Dict[str, Any]
+) -> Optional[Subscription]:
+    """
+    Update a subscription and record the change in history
+    
+    Args:
+        db: Database session
+        user_id: User ID
+        action: Action type (updated, cancelled, etc.)
+        updates: Dictionary of fields to update
+        
+    Returns:
+        Updated subscription or None if not found
+    """
+    subscription = get_user_subscription(db, user_id)
+    
+    if not subscription:
+        return None
+    
+    # Store previous values for history
+    previous_plan = subscription.plan
+    previous_status = "active" if subscription.is_active else "inactive"
+    
+    # Update subscription
+    for key, value in updates.items():
+        if hasattr(subscription, key):
+            setattr(subscription, key, value)
+    
+    # Record in history
+    record_subscription_history(
+        db=db,
+        user_id=user_id,
+        subscription_id=subscription.id,
+        stripe_subscription_id=subscription.stripe_subscription_id,
+        plan=subscription.plan,
+        previous_plan=previous_plan,
+        action=action,
+        status="active" if subscription.is_active else "inactive",
+        metadata={
+            "updates": {k: str(v) for k, v in updates.items()},
+            "previous_status": previous_status
+        }
+    )
+    
+    db.commit()
+    db.refresh(subscription)
+    
+    return subscription
+
+def process_planned_downgrades(db: Session) -> int:
+    """
+    Process subscriptions with planned downgrades that have reached their end date
+    
+    Args:
+        db: Database session
+        
+    Returns:
+        Number of subscriptions processed
+    """
+    # Find subscriptions with planned downgrades and end dates in the past
+    subscriptions = db.query(Subscription).filter(
+        Subscription.planned_downgrade_to.isnot(None),
+        Subscription.is_active == True,
+        Subscription.end_date <= func.now()
+    ).all()
+    
+    count = 0
+    
+    for subscription in subscriptions:
+        # Get plan details from pricing tiers
+        from app.payment.stripe_handler import PRICING_TIERS
+        
+        # Process the downgrade
+        previous_plan = subscription.plan
+        new_plan = subscription.planned_downgrade_to
+        
+        # Update subscription
+        subscription.plan = new_plan
+        subscription.planned_downgrade_to = None
+        
+        # Update limits if the plan exists in PRICING_TIERS
+        if new_plan in PRICING_TIERS:
+            subscription.conversion_limit = PRICING_TIERS[new_plan]["limits"]["conversion_limit"]
+            subscription.file_size_limit_mb = PRICING_TIERS[new_plan]["limits"]["file_size_limit_mb"]
+        
+        # Record in history
+        record_subscription_history(
+            db=db,
+            user_id=subscription.user_id,
+            subscription_id=subscription.id,
+            stripe_subscription_id=subscription.stripe_subscription_id,
+            plan=new_plan,
+            previous_plan=previous_plan,
+            action="downgraded",
+            status="active",
+            metadata={
+                "downgrade_processed": True,
+                "effective_date": datetime.now().isoformat()
+            }
+        )
+        
+        count += 1
+    
+    db.commit()
+    return count
+
+def record_subscription_history(
+    db: Session,
+    user_id: str,
+    subscription_id: str,
+    stripe_subscription_id: Optional[str],
+    plan: str,
+    previous_plan: Optional[str],
+    action: str,
+    status: str,
+    metadata: Optional[Dict[str, Any]] = None
+) -> SubscriptionHistory:
+    """
+    Record a subscription history entry
+    
+    Args:
+        db: Database session
+        user_id: User ID
+        subscription_id: Subscription ID
+        stripe_subscription_id: Stripe subscription ID (optional)
+        plan: Current plan
+        previous_plan: Previous plan (optional)
+        action: Action type (created, updated, cancelled, etc.)
+        status: Status of the subscription
+        metadata: Additional metadata (optional)
+        
+    Returns:
+        The created subscription history entry
+    """
+    history_entry = SubscriptionHistory(
+        user_id=user_id,
+        subscription_id=subscription_id,
+        stripe_subscription_id=stripe_subscription_id,
+        plan=plan,
+        previous_plan=previous_plan,
+        action=action,
+        status=status,
+        metadata=metadata or {}
+    )
+    
+    db.add(history_entry)
+    db.commit()
+    db.refresh(history_entry)
+    
+    return history_entry
+
+def get_subscription_history(
+    db: Session,
+    user_id: str,
+    limit: int = 10
+) -> List[SubscriptionHistory]:
+    """
+    Get subscription history for a user
+    
+    Args:
+        db: Database session
+        user_id: User ID
+        limit: Maximum number of entries to return
+        
+    Returns:
+        List of subscription history entries
+    """
+    return db.query(SubscriptionHistory)\
+        .filter(SubscriptionHistory.user_id == user_id)\
+        .order_by(SubscriptionHistory.action_date.desc())\
+        .limit(limit)\
+        .all()
+
+def update_subscription_with_history(
+    db: Session,
+    user_id: str,
+    action: str,
+    updates: Dict[str, Any]
+) -> Optional[Subscription]:
+    """
+    Update a subscription and record the change in history
+    
+    Args:
+        db: Database session
+        user_id: User ID
+        action: Action type (updated, cancelled, etc.)
+        updates: Dictionary of fields to update
+        
+    Returns:
+        Updated subscription or None if not found
+    """
+    subscription = get_user_subscription(db, user_id)
+    
+    if not subscription:
+        return None
+    
+    # Store previous values for history
+    previous_plan = subscription.plan
+    previous_status = "active" if subscription.is_active else "inactive"
+    
+    # Update subscription
+    for key, value in updates.items():
+        if hasattr(subscription, key):
+            setattr(subscription, key, value)
+    
+    # Record in history
+    record_subscription_history(
+        db=db,
+        user_id=user_id,
+        subscription_id=subscription.id,
+        stripe_subscription_id=subscription.stripe_subscription_id,
+        plan=subscription.plan,
+        previous_plan=previous_plan,
+        action=action,
+        status="active" if subscription.is_active else "inactive",
+        metadata={
+            "updates": {k: str(v) for k, v in updates.items()},
+            "previous_status": previous_status
+        }
+    )
+    
+    db.commit()
+    db.refresh(subscription)
+    
+    return subscription
+
+def process_planned_downgrades(db: Session) -> int:
+    """
+    Process subscriptions with planned downgrades that have reached their end date
+    
+    Args:
+        db: Database session
+        
+    Returns:
+        Number of subscriptions processed
+    """
+    # Find subscriptions with planned downgrades and end dates in the past
+    subscriptions = db.query(Subscription).filter(
+        Subscription.planned_downgrade_to.isnot(None),
+        Subscription.is_active == True,
+        Subscription.end_date <= func.now()
+    ).all()
+    
+    count = 0
+    
+    for subscription in subscriptions:
+        # Get plan details from pricing tiers
+        from app.payment.stripe_handler import PRICING_TIERS
+        
+        # Process the downgrade
+        previous_plan = subscription.plan
+        new_plan = subscription.planned_downgrade_to
+        
+        # Update subscription
+        subscription.plan = new_plan
+        subscription.planned_downgrade_to = None
+        
+        # Update limits if the plan exists in PRICING_TIERS
+        if new_plan in PRICING_TIERS:
+            subscription.conversion_limit = PRICING_TIERS[new_plan]["limits"]["conversion_limit"]
+            subscription.file_size_limit_mb = PRICING_TIERS[new_plan]["limits"]["file_size_limit_mb"]
+        
+        # Record in history
+        record_subscription_history(
+            db=db,
+            user_id=subscription.user_id,
+            subscription_id=subscription.id,
+            stripe_subscription_id=subscription.stripe_subscription_id,
+            plan=new_plan,
+            previous_plan=previous_plan,
+            action="downgraded",
+            status="active",
+            metadata={
+                "downgrade_processed": True,
+                "effective_date": datetime.now().isoformat()
+            }
+        )
+        
+        count += 1
+    
+    db.commit()
+    return count
+
+def get_user_login_history(db: Session, user_id: str, limit: int = 10) -> List[LoginHistory]:
+    """
+    Get a user's login history
+    
+    Args:
+        db: Database session
+        user_id: User ID
+        limit: Maximum number of records to return
+        
+    Returns:
+        List of login history records
+    """
+    return db.query(LoginHistory)\
+        .filter(LoginHistory.user_id == user_id)\
+        .order_by(desc(LoginHistory.login_time))\
+        .limit(limit)\
+        .all()

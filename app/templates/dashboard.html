@@ -170,152 +170,38 @@
                     </div>
 
                     <!-- Subscription Tab -->
-                    <div class="tab-pane fade" id="subscription">
-                        <div class="card shadow-sm mb-4">
-                            <div class="card-body p-4">
-                                <h3 class="card-title mb-4">Subscription Management</h3>
+                    <!-- Alert container for messages -->
+                    <div id="subscription-alert-container" class="mb-4"></div>
 
-                                <div class="alert alert-primary d-flex align-items-center" role="alert">
-                                    <i class="bi bi-info-circle-fill me-2"></i>
-                                    <div>
-                                        You are currently on the <strong id="current-plan-name">Pro</strong> plan.
+                    <!-- Subscription history section to add after the pricing cards -->
+                    <div class="card shadow-sm mt-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Subscription History</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="subscription-history-container">
+                                <div class="d-flex justify-content-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
 
-                                <div class="card border-primary mb-4">
-                                    <div class="card-header bg-primary text-white">
-                                        <h5 class="mb-0">Current Plan Details</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <p><strong>Plan:</strong> <span id="plan-name">Pro</span></p>
-                                                <p><strong>Price:</strong> <span id="plan-price">$24.99/month</span></p>
-                                                <p><strong>Status:</strong> <span class="badge bg-success"
-                                                        id="plan-status">Active</span></p>
-                                                <p><strong>Next billing date:</strong> <span
-                                                        id="next-billing-date">April 15, 2025</span></p>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <p><strong>Conversions:</strong> <span id="plan-conversions">500 per
-                                                        month</span></p>
-                                                <p><strong>File size limit:</strong> <span
-                                                        id="plan-file-limit">100MB</span></p>
-                                                <p><strong>API access:</strong> <span id="plan-api">Advanced API
-                                                        access</span></p>
-                                                <p><strong>Support:</strong> <span id="plan-support">Priority
-                                                        support</span></p>
-                                            </div>
+                    <!-- Add this to the billing section -->
+                    <div class="card shadow-sm mt-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Billing Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="billing-info-container">
+                                <p class="text-muted">Your invoices and payment history will appear here.</p>
+                                <div id="invoices-container">
+                                    <div class="d-flex justify-content-center">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
                                         </div>
-                                    </div>
-                                </div>
-
-                                <h4 class="mb-3">Change Plan</h4>
-
-                                <div class="row g-4 mb-4">
-                                    <!-- Basic Plan -->
-                                    <div class="col-md-4">
-                                        <div class="card h-100">
-                                            <div class="card-header">
-                                                <h5 class="mb-0">Basic</h5>
-                                            </div>
-                                            <div class="card-body d-flex flex-column">
-                                                <h2 class="card-title mb-4">$9.99<small
-                                                        class="text-muted fw-light">/mo</small></h2>
-                                                <ul class="list-unstyled mb-4">
-                                                    <li class="mb-2"><i
-                                                            class="bi bi-check-circle-fill text-success me-2"></i>100
-                                                        conversions/month</li>
-                                                    <li class="mb-2"><i
-                                                            class="bi bi-check-circle-fill text-success me-2"></i>50MB
-                                                        file size limit</li>
-                                                    <li class="mb-2"><i
-                                                            class="bi bi-check-circle-fill text-success me-2"></i>API
-                                                        access</li>
-                                                    <li class="mb-2"><i
-                                                            class="bi bi-check-circle-fill text-success me-2"></i>Email
-                                                        support</li>
-                                                </ul>
-                                                <div class="mt-auto">
-                                                    <button class="btn btn-outline-primary w-100"
-                                                        id="downgrade-basic-btn">Downgrade</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Pro Plan -->
-                                    <div class="col-md-4">
-                                        <div class="card h-100 border-primary">
-                                            <div class="card-header bg-primary text-white">
-                                                <h5 class="mb-0">Pro</h5>
-                                                <span
-                                                    class="badge bg-warning text-dark position-absolute top-0 end-0 mt-2 me-2">Current
-                                                    Plan</span>
-                                            </div>
-                                            <div class="card-body d-flex flex-column">
-                                                <h2 class="card-title mb-4">$24.99<small
-                                                        class="text-muted fw-light">/mo</small></h2>
-                                                <ul class="list-unstyled mb-4">
-                                                    <li class="mb-2"><i
-                                                            class="bi bi-check-circle-fill text-success me-2"></i>500
-                                                        conversions/month</li>
-                                                    <li class="mb-2"><i
-                                                            class="bi bi-check-circle-fill text-success me-2"></i>100MB
-                                                        file size limit</li>
-                                                    <li class="mb-2"><i
-                                                            class="bi bi-check-circle-fill text-success me-2"></i>Advanced
-                                                        API access</li>
-                                                    <li class="mb-2"><i
-                                                            class="bi bi-check-circle-fill text-success me-2"></i>Priority
-                                                        support</li>
-                                                </ul>
-                                                <div class="mt-auto">
-                                                    <button class="btn btn-primary w-100" disabled>Current Plan</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Enterprise Plan -->
-                                    <div class="col-md-4">
-                                        <div class="card h-100">
-                                            <div class="card-header bg-dark text-white">
-                                                <h5 class="mb-0">Enterprise</h5>
-                                            </div>
-                                            <div class="card-body d-flex flex-column">
-                                                <h2 class="card-title mb-4">$99.99<small
-                                                        class="text-muted fw-light">/mo</small></h2>
-                                                <ul class="list-unstyled mb-4">
-                                                    <li class="mb-2"><i
-                                                            class="bi bi-check-circle-fill text-success me-2"></i>Unlimited
-                                                        conversions</li>
-                                                    <li class="mb-2"><i
-                                                            class="bi bi-check-circle-fill text-success me-2"></i>500MB
-                                                        file size limit</li>
-                                                    <li class="mb-2"><i
-                                                            class="bi bi-check-circle-fill text-success me-2"></i>Full
-                                                        API access</li>
-                                                    <li class="mb-2"><i
-                                                            class="bi bi-check-circle-fill text-success me-2"></i>Dedicated
-                                                        support</li>
-                                                </ul>
-                                                <div class="mt-auto">
-                                                    <button class="btn btn-dark w-100"
-                                                        id="upgrade-enterprise-btn">Upgrade</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="card bg-light border-0 mt-4">
-                                    <div class="card-body">
-                                        <h5>Subscription Management</h5>
-                                        <p class="mb-3">Need to make additional changes to your subscription?</p>
-                                        <button class="btn btn-outline-danger" id="cancel-subscription-btn">Cancel
-                                            Subscription</button>
-                                        <a href="/contact" class="btn btn-outline-primary ms-2">Contact Support</a>
                                     </div>
                                 </div>
                             </div>
@@ -914,5 +800,7 @@
     </script>
 </body>
 
+<!-- Add this to the extra_js block in your template -->
+<script src="/static/js/dashboard-subscription.js"></script>
 
 {% endblock %}
