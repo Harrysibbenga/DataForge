@@ -3,7 +3,8 @@ app/core/config.py - Application configuration settings
 """
 import os
 from typing import Optional, Dict, Any
-from pydantic import BaseSettings, PostgresDsn, validator
+from pydantic_settings import BaseSettings
+from pydantic import PostgresDsn, validator
 from functools import lru_cache
 
 class Settings(BaseSettings):
@@ -16,10 +17,10 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "info"
     
     # Database settings
-    DATABASE_URL: PostgresDsn = "postgresql://dataforge_user:your_secure_password@localhost/dataforge"
+    DATABASE_URL: str = "sqlite:///./dataforge.db"  # Default to SQLite for easy development
     
     # JWT settings
-    JWT_SECRET_KEY: str
+    JWT_SECRET_KEY: str = "development_secret_key_change_in_production"  # Add default for development
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
     
@@ -60,14 +61,28 @@ class Settings(BaseSettings):
         },
     }
     
+    # Add model_config to allow extra fields
+    model_config = {
+        "extra": "allow",
+        "env_file": ".env",
+        "case_sensitive": True
+    }
+    
     # Validators
     @validator("DATABASE_URL", pre=True)
     def validate_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> str:
         """Validate database connection string"""
-        # If DATABASE_URL is provided in the environment, use it
-        # Otherwise, construct it from individual components (for use with Docker)
-        if os.getenv("POSTGRES_USER") and not v:
-            return PostgresDsn.build(
+        print(f"Original DATABASE_URL: {v}")
+        
+        # Use environment variable if provided
+        env_url = os.getenv("DATABASE_URL")
+        if env_url:
+            print(f"Using DATABASE_URL from environment: {env_url}")
+            return env_url
+            
+        # Use Docker PostgreSQL settings if available
+        if os.getenv("POSTGRES_USER"):
+            postgres_url = PostgresDsn.build(
                 scheme="postgresql",
                 user=os.getenv("POSTGRES_USER", ""),
                 password=os.getenv("POSTGRES_PASSWORD", ""),
@@ -75,12 +90,11 @@ class Settings(BaseSettings):
                 port=os.getenv("POSTGRES_PORT", "5432"),
                 path=f"/{os.getenv('POSTGRES_DB', '')}",
             )
+            print(f"Built PostgreSQL URL: {postgres_url}")
+            return postgres_url
+            
+        # Fall back to the value provided or the default
         return v
-    
-    class Config:
-        """Pydantic config"""
-        env_file = ".env"
-        case_sensitive = True
 
 
 @lru_cache()
@@ -90,4 +104,6 @@ def get_settings() -> Settings:
     
     When using this function, settings are loaded once and reused.
     """
-    return Settings()
+    settings = Settings()
+    print(f"Using database URL: {settings.DATABASE_URL}")
+    return settings

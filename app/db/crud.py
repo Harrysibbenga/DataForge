@@ -18,7 +18,7 @@ def get_user_by_email(db: Session, email: str) -> Optional[User]:
     """Get a user by email"""
     return db.query(User).filter(User.email == email).first()
 
-def create_user(db: Session, email: str, password: str, full_name: str) -> User:
+def create_user(db: Session, email: str, password: str, full_name: str, is_verified: bool = False) -> User:
     """
     Create a new user
     
@@ -27,6 +27,7 @@ def create_user(db: Session, email: str, password: str, full_name: str) -> User:
         email: User's email
         password: User's password (will be hashed)
         full_name: User's full name
+        is_verified: Whether the user's email is verified
         
     Returns:
         Newly created user
@@ -35,7 +36,8 @@ def create_user(db: Session, email: str, password: str, full_name: str) -> User:
     user = User(
         email=email,
         hashed_password=hashed_password,
-        full_name=full_name
+        full_name=full_name,
+        is_verified=is_verified  # Add this parameter
     )
     db.add(user)
     db.commit()

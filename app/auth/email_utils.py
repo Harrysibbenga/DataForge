@@ -12,6 +12,11 @@ import jwt
 from fastapi import HTTPException, status
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
 # Setup logging
 logger = logging.getLogger(__name__)
 

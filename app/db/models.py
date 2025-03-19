@@ -7,6 +7,7 @@ from sqlalchemy.sql import func
 import uuid
 from datetime import datetime, timedelta
 
+
 from app.db.config import Base
 
 def generate_uuid():
@@ -124,3 +125,23 @@ class LoginHistory(Base):
     
     # Relationships
     user = relationship("User", back_populates="login_history")
+    
+    
+class SubscriptionHistory(Base):
+    """Subscription history model to track changes"""
+    __tablename__ = "subscription_history"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    subscription_id = Column(String, ForeignKey("subscriptions.id", ondelete="CASCADE"), nullable=False, index=True)
+    stripe_subscription_id = Column(String, nullable=True, index=True)
+    plan = Column(String, nullable=False)
+    previous_plan = Column(String, nullable=True)
+    action = Column(String, nullable=False)  # created, updated, cancelled, etc.
+    action_date = Column(DateTime, default=func.now())
+    status = Column(String, nullable=False)
+    meta_data = Column(JSON, nullable=True)
+    
+    # Relationships
+    user = relationship("User", backref="subscription_history")
+    subscription = relationship("Subscription", backref="history")

@@ -2,7 +2,7 @@
 DataForge data models and schemas
 """
 from pydantic import BaseModel
-from typing import List, Optional, Dict
+from typing import List, Optional
 
 class ConversionRequest(BaseModel):
     content: str
