@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Format date
                 const date = new Date(invoice.created);
-                const formattedDate = date.toLocaleDateString('en-US', { 
+                const formattedDate = date.toLocaleDateString('en-GB', { 
                     year: 'numeric', 
                     month: 'short', 
                     day: 'numeric'
@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Helper function to format currency
-    function formatCurrency(amount, currency = 'usd') {
+    function formatCurrency(amount, currency = 'gbp') {
         // Get currency symbol
         const symbols = {
             'usd': '$',

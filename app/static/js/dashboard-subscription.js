@@ -101,9 +101,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (planPrice) {
             const prices = {
                 'free': '$0/month',
-                'basic': '$9.99/month',
-                'pro': '$24.99/month',
-                'enterprise': '$99.99/month'
+                'basic': '£9.99/month',
+                'pro': '£24.99/month',
+                'enterprise': '£99.99/month'
             };
             planPrice.textContent = prices[subscription.plan] || '$0/month';
         }
