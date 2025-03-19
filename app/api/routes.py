@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import io
 import os
 import logging
+import datetime
 
 from app.core.converter import DataConverter
 from app.core.transformations import (
@@ -24,6 +25,11 @@ from app.core.transformations import (
 from app.api.auth_routes import router as auth_router
 from app.api.payment_routes import router as payment_router
 from app.api.dashboard_routes import router as dashboard_router
+
+from sqlalchemy.orm import Session
+from app.db.config import get_db
+import app.db.crud as crud
+from app.auth.handlers import get_user_from_request
 
 # Set up logging
 logging.basicConfig(
@@ -93,25 +99,100 @@ async def api_docs_page(request: Request):
     return templates.TemplateResponse("api_docs.html", {"request": request})
 
 # API routes
+"""
+Updated conversion endpoint for DataForge
+"""
 @app.post("/api/convert")
 async def convert_data(
+    request: Request,
     file: UploadFile = File(...),
     to_format: str = Form(...),
     remove_empty_rows_flag: bool = Form(False),
     remove_empty_cols_flag: bool = Form(False),
     standardize_names_flag: bool = Form(False),
     trim_whitespace_flag: bool = Form(False),
-    deduplicate_flag: bool = Form(False)
+    deduplicate_flag: bool = Form(False),
+    db: Session = Depends(get_db)
 ):
     """
     Convert uploaded file to specified format with optional transformations
+    
+    This endpoint supports both authenticated web users and API keys.
     """
     try:
-        # Read the uploaded file
+        start_time = datetime.now()
+        
+        # Get user from request (either from JWT token or API key)
+        user = await get_user_from_request(request, db=db)
+        
+        # If no valid user found, return unauthorized
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication required",
+                headers={"WWW-Authenticate": "Bearer or API Key"},
+            )
+        
+        # Get API key if present
+        api_key = request.headers.get("X-API-Key")
+        api_key_id = None
+        
+        if api_key:
+            db_api_key = crud.get_api_key_by_key(db, api_key)
+            if db_api_key:
+                api_key_id = db_api_key.id
+        
+        # Check if user has reached their conversion limit
+        is_limit_reached, current_count, limit = crud.check_conversion_limit(db, user.id)
+        
+        if is_limit_reached:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Conversion limit reached ({current_count}/{limit}). Please upgrade your plan."
+            )
+        
+        # Get user's subscription for file size limit
+        subscription = crud.get_user_subscription(db, user.id)
+        if not subscription:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User has no active subscription"
+            )
+        
+        # Check file size limit
+        file_size_bytes = 0
         content = await file.read()
+        file_size_bytes = len(content)
+        file_size_mb = file_size_bytes / (1024 * 1024)
+        
+        if file_size_mb > subscription.file_size_limit_mb:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"File size exceeds the limit for your plan ({file_size_mb:.2f}MB > {subscription.file_size_limit_mb}MB)"
+            )
+        
+        # Seek back to the start of the file
+        file.file.seek(0)
         
         # Detect source format
-        from_format = converter.detect_format(file.filename)
+        try:
+            from_format = converter.detect_format(file.filename)
+        except ValueError as e:
+            # Record failed conversion
+            crud.record_conversion(
+                db=db,
+                user_id=user.id,
+                file_name=file.filename,
+                from_format="unknown",
+                to_format=to_format,
+                file_size_kb=file_size_bytes / 1024,
+                source="api" if api_key else "web",
+                ip_address=request.client.host if request.client else None,
+                api_key_id=api_key_id,
+                status="error",
+                error_message=str(e)
+            )
+            raise HTTPException(status_code=400, detail=str(e))
         
         # Build transformation pipeline
         transformations = []
@@ -126,24 +207,84 @@ async def convert_data(
         if deduplicate_flag:
             transformations.append(deduplicate_rows)
         
+        # Compile list of applied transformations
+        applied_transformations = {
+            "remove_empty_rows": remove_empty_rows_flag,
+            "remove_empty_columns": remove_empty_cols_flag,
+            "standardize_names": standardize_names_flag,
+            "trim_whitespace": trim_whitespace_flag,
+            "deduplicate": deduplicate_flag
+        }
+        
         # Convert the data
-        result = converter.convert(content, from_format, to_format, transformations)
-        
-        # Generate output filename
-        output_filename = f"{os.path.splitext(file.filename)[0]}.{to_format}"
-        
-        # Create response
-        response = StreamingResponse(
-            io.BytesIO(result.encode() if isinstance(result, str) else result),
-            media_type="application/octet-stream",
-        )
-        response.headers["Content-Disposition"] = f"attachment; filename={output_filename}"
-        
-        return response
+        try:
+            result = converter.convert(content, from_format, to_format, transformations)
+            
+            # Calculate processing time
+            end_time = datetime.now()
+            processing_time_ms = int((end_time - start_time).total_seconds() * 1000)
+            
+            # Record successful conversion
+            crud.record_conversion(
+                db=db,
+                user_id=user.id,
+                file_name=file.filename,
+                from_format=from_format,
+                to_format=to_format,
+                file_size_kb=file_size_bytes / 1024,
+                source="api" if api_key else "web",
+                ip_address=request.client.host if request.client else None,
+                api_key_id=api_key_id,
+                status="success",
+                processing_time_ms=processing_time_ms,
+                transformations=applied_transformations
+            )
+            
+            # Generate output filename
+            output_filename = f"{os.path.splitext(file.filename)[0]}.{to_format}"
+            
+            # Create response
+            response = StreamingResponse(
+                io.BytesIO(result.encode() if isinstance(result, str) else result),
+                media_type="application/octet-stream",
+            )
+            response.headers["Content-Disposition"] = f"attachment; filename={output_filename}"
+            
+            return response
+            
+        except Exception as e:
+            # Record failed conversion
+            end_time = datetime.now()
+            processing_time_ms = int((end_time - start_time).total_seconds() * 1000)
+            
+            crud.record_conversion(
+                db=db,
+                user_id=user.id,
+                file_name=file.filename,
+                from_format=from_format,
+                to_format=to_format,
+                file_size_kb=file_size_bytes / 1024,
+                source="api" if api_key else "web",
+                ip_address=request.client.host if request.client else None,
+                api_key_id=api_key_id,
+                status="error",
+                error_message=str(e),
+                processing_time_ms=processing_time_ms,
+                transformations=applied_transformations
+            )
+            
+            raise HTTPException(status_code=400, detail=str(e))
+    
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
     
     except Exception as e:
+        # Log the error
         logger.error(f"Error during conversion: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
+        
+        # Return error response
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @app.get("/api/formats")
 async def get_formats():
