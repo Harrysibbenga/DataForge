@@ -1,0 +1,352 @@
+<!-- templates/api_docs.html -->
+{% extends "base.html" %}
+
+{% block title %}API Documentation - DataForge{% endblock %}
+
+{% block content %}
+
+<body>
+    <div class="container py-5">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="sticky-top pt-4">
+                    <div class="list-group">
+                        <a href="#introduction" class="list-group-item list-group-item-action">Introduction</a>
+                        <a href="#authentication" class="list-group-item list-group-item-action">Authentication</a>
+                        <a href="#api-keys" class="list-group-item list-group-item-action">API Keys</a>
+                        <a href="#endpoints" class="list-group-item list-group-item-action">API Endpoints</a>
+                        <a href="#convert" class="list-group-item list-group-item-action ps-4">Convert Data</a>
+                        <a href="#formats" class="list-group-item list-group-item-action ps-4">Supported Formats</a>
+                        <a href="#usage" class="list-group-item list-group-item-action ps-4">Usage Statistics</a>
+                        <a href="#examples" class="list-group-item list-group-item-action">Code Examples</a>
+                        <a href="#errors" class="list-group-item list-group-item-action">Error Handling</a>
+                        <a href="#rate-limits" class="list-group-item list-group-item-action">Rate Limits</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-9">
+                <div class="card shadow-sm">
+                    <div class="card-body p-lg-5">
+                        <section id="introduction" class="mb-5">
+                            <h2 class="mb-4">Introduction</h2>
+                            <p>Welcome to the DataForge API documentation. This API allows you to convert data between
+                                various formats programmatically.</p>
+                            <p>The base URL for all API endpoints is:</p>
+                            <pre class="code"><code>https://api.dataforge.io/api</code></pre>
+                            <p>All API requests must use HTTPS. HTTP requests will be rejected.</p>
+                        </section>
+
+                        <section id="authentication" class="mb-5">
+                            <h2 class="mb-4">Authentication</h2>
+                            <p>The DataForge API uses API keys for authentication. API keys are passed in the header of
+                                your request:</p>
+                            <pre class="code"><code>X-API-Key: your_api_key_here</code></pre>
+                            <p>You can create and manage your API keys from your <a href="/settings">account
+                                    settings</a>.</p>
+                        </section>
+
+                        <section id="api-keys" class="mb-5">
+                            <h2 class="mb-4">API Keys</h2>
+                            <p>To generate an API key:</p>
+                            <ol>
+                                <li>Log in to your DataForge account</li>
+                                <li>Navigate to Account Settings</li>
+                                <li>Click on "API Keys" tab</li>
+                                <li>Click "Generate New API Key"</li>
+                                <li>Give your key a name and click "Create"</li>
+                            </ol>
+                            <div class="alert alert-warning">
+                                <strong>Important:</strong> Keep your API keys secure and never share them publicly.
+                            </div>
+                        </section>
+
+                        <section id="endpoints" class="mb-5">
+                            <h2 class="mb-4">API Endpoints</h2>
+                            <p>The following endpoints are available for use:</p>
+
+                            <section id="convert" class="mb-4 ps-4">
+                                <h3 class="mb-3">Convert Data</h3>
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="method-badge bg-success text-white py-1 me-2 rounded">POST</span>
+                                    <code>/api/convert</code>
+                                </div>
+                                <p>Convert data from one format to another with optional transformations.</p>
+
+                                <h4 class="mt-4 mb-3">Parameters</h4>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Parameter</th>
+                                                <th>Type</th>
+                                                <th>Required</th>
+                                                <th>Description</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><code>file</code></td>
+                                                <td>File</td>
+                                                <td>Yes</td>
+                                                <td>The file to convert</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>to_format</code></td>
+                                                <td>String</td>
+                                                <td>Yes</td>
+                                                <td>Target format (csv, json, excel, xml, yaml)</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>remove_empty_rows_flag</code></td>
+                                                <td>Boolean</td>
+                                                <td>No</td>
+                                                <td>Remove empty rows if true</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>remove_empty_cols_flag</code></td>
+                                                <td>Boolean</td>
+                                                <td>No</td>
+                                                <td>Remove empty columns if true</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>standardize_names_flag</code></td>
+                                                <td>Boolean</td>
+                                                <td>No</td>
+                                                <td>Standardize column names if true</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>trim_whitespace_flag</code></td>
+                                                <td>Boolean</td>
+                                                <td>No</td>
+                                                <td>Trim whitespace from text values if true</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>deduplicate_flag</code></td>
+                                                <td>Boolean</td>
+                                                <td>No</td>
+                                                <td>Remove duplicate rows if true</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <h4 class="mt-4 mb-3">Example Request</h4>
+                                <pre class="code"><code>curl -X POST "https://api.dataforge.io/api/convert" \
+     -H "X-API-Key: your_api_key" \
+     -F "file=@data.csv" \
+     -F "to_format=json" \
+     -F "remove_empty_rows_flag=true" \
+     -F "standardize_names_flag=true" \
+     > converted.json</code></pre>
+
+                                <h4 class="mt-4 mb-3">Response</h4>
+                                <p>The response is a file with the converted data in the requested format.</p>
+                            </section>
+
+                            <section id="formats" class="mb-4 ps-4">
+                                <h3 class="mb-3">Supported Formats</h3>
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="method-badge bg-primary text-white py-1 me-2 rounded">GET</span>
+                                    <code>/api/formats</code>
+                                </div>
+                                <p>Get a list of supported data formats.</p>
+
+                                <h4 class="mt-4 mb-3">Example Request</h4>
+                                <pre class="code"><code>curl -X GET "https://api.dataforge.io/api/formats" \
+     -H "X-API-Key: your_api_key"</code></pre>
+
+                                <h4 class="mt-4 mb-3">Example Response</h4>
+                                <pre class="code"><code>{
+    "formats": ["csv", "json", "excel", "xml", "yaml"]
+}</code></pre>
+                            </section>
+
+                            <section id="usage" class="mb-4 ps-4">
+                                <h3 class="mb-3">Usage Statistics</h3>
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="method-badge bg-primary text-white py-1 me-2 rounded">GET</span>
+                                    <code>/api/usage</code>
+                                </div>
+                                <p>Get current usage statistics for your account.</p>
+
+                                <h4 class="mt-4 mb-3">Example Request</h4>
+                                <pre class="code"><code>curl -X GET "https://api.dataforge.io/api/usage" \
+     -H "X-API-Key: your_api_key"</code></pre>
+
+                                <h4 class="mt-4 mb-3">Example Response</h4>
+                                <pre class="code"><code>{
+    "plan": "pro",
+    "conversions": {
+        "used": 45,
+        "limit": 500,
+        "remaining": 455
+    },
+    "subscription": {
+        "active": true,
+        "start_date": "2025-01-15T00:00:00Z",
+        "end_date": "2025-02-15T00:00:00Z"
+    }
+}</code></pre>
+                            </section>
+                        </section>
+
+                        <section id="examples" class="mb-5">
+                            <h2 class="mb-4">Code Examples</h2>
+
+                            <h3 class="mb-3">Python</h3>
+                            <pre class="code"><code>import requests
+
+api_key = "your_api_key"
+url = "https://api.dataforge.io/api/convert"
+
+headers = {
+    "X-API-Key": api_key
+}
+
+files = {
+    "file": open("data.csv", "rb")
+}
+
+data = {
+    "to_format": "json",
+    "remove_empty_rows_flag": "true",
+    "standardize_names_flag": "true"
+}
+
+response = requests.post(url, headers=headers, files=files, data=data)
+
+# Save the converted file
+with open("converted.json", "wb") as f:
+    f.write(response.content)</code></pre>
+
+                            <h3 class="mt-4 mb-3">JavaScript</h3>
+                            <pre class="code"><code>const apiKey = 'your_api_key';
+const url = 'https://api.dataforge.io/api/convert';
+
+const formData = new FormData();
+formData.append('file', fileInput.files[0]);
+formData.append('to_format', 'json');
+formData.append('remove_empty_rows_flag', true);
+formData.append('standardize_names_flag', true);
+
+fetch(url, {
+    method: 'POST',
+    headers: {
+        'X-API-Key': apiKey
+    },
+    body: formData
+})
+.then(response => response.blob())
+.then(blob => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'converted.json';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+})
+.catch(error => console.error('Error:', error));</code></pre>
+                        </section>
+
+                        <section id="errors" class="mb-5">
+                            <h2 class="mb-4">Error Handling</h2>
+                            <p>The API uses standard HTTP status codes to indicate success or failure of requests:</p>
+
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Code</th>
+                                            <th>Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>200</td>
+                                            <td>Success</td>
+                                        </tr>
+                                        <tr>
+                                            <td>400</td>
+                                            <td>Bad Request - Check input parameters</td>
+                                        </tr>
+                                        <tr>
+                                            <td>401</td>
+                                            <td>Unauthorized - Invalid API key</td>
+                                        </tr>
+                                        <tr>
+                                            <td>403</td>
+                                            <td>Forbidden - Conversion limit reached</td>
+                                        </tr>
+                                        <tr>
+                                            <td>404</td>
+                                            <td>Not Found - Endpoint does not exist</td>
+                                        </tr>
+                                        <tr>
+                                            <td>415</td>
+                                            <td>Unsupported Media Type - File format not supported</td>
+                                        </tr>
+                                        <tr>
+                                            <td>429</td>
+                                            <td>Too Many Requests - Rate limit exceeded</td>
+                                        </tr>
+                                        <tr>
+                                            <td>500</td>
+                                            <td>Internal Server Error - Something went wrong on our side</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <h3 class="mt-4 mb-3">Error Response Format</h3>
+                            <p>Error responses include a detail message with more information:</p>
+                            <pre class="code"><code>{
+    "detail": "Unsupported file extension: .txt"
+}</code></pre>
+                        </section>
+
+                        <section id="rate-limits" class="mb-5">
+                            <h2 class="mb-4">Rate Limits</h2>
+                            <p>API requests are limited based on your subscription plan:</p>
+
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Plan</th>
+                                            <th>Rate Limit</th>
+                                            <th>Monthly Limit</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Basic</td>
+                                            <td>10 requests/minute</td>
+                                            <td>100 conversions</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Pro</td>
+                                            <td>30 requests/minute</td>
+                                            <td>500 conversions</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Enterprise</td>
+                                            <td>100 requests/minute</td>
+                                            <td>Unlimited conversions</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <p>If you exceed your rate limit, the API will return a 429 status code with a Retry-After
+                                header indicating how many seconds to wait before retrying.</p>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+{% endblock %}

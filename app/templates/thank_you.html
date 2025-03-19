@@ -1,0 +1,94 @@
+<!-- templates/thank_you.html -->
+{% extends "base.html" %}
+
+{% block title %}Thank You - DataForge{% endblock %}
+
+{% block content %}
+
+<body>
+
+    <div class="container py-5">
+        <div class="text-center">
+            <div class="mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" fill="currentColor"
+                    class="bi bi-check-circle-fill text-success" viewBox="0 0 16 16">
+                    <path
+                        d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z" />
+                </svg>
+            </div>
+            <h1 class="display-4 mb-4">Thank You for Your Purchase!</h1>
+            <p class="lead mb-5">Your subscription has been successfully activated. You now have access to all the
+                features of your plan.</p>
+
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="card mb-4 shadow-sm">
+                        <div class="card-body">
+                            <h3 class="card-title">What's Next?</h3>
+                            <ul class="list-unstyled text-start">
+                                <li class="mb-3">
+                                    <div class="d-flex">
+                                        <div class="me-3">
+                                            <span class="badge bg-primary rounded-circle p-2">1</span>
+                                        </div>
+                                        <div>
+                                            <strong>Start Converting</strong>
+                                            <p class="text-muted">Convert your data files with your new expanded
+                                                capabilities.</p>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li class="mb-3">
+                                    <div class="d-flex">
+                                        <div class="me-3">
+                                            <span class="badge bg-primary rounded-circle p-2">2</span>
+                                        </div>
+                                        <div>
+                                            <strong>Generate API Keys</strong>
+                                            <p class="text-muted">Access DataForge programmatically with your new API
+                                                keys.</p>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li class="mb-3">
+                                    <div class="d-flex">
+                                        <div class="me-3">
+                                            <span class="badge bg-primary rounded-circle p-2">3</span>
+                                        </div>
+                                        <div>
+                                            <strong>Explore Documentation</strong>
+                                            <p class="text-muted">Check out our API documentation to make the most of
+                                                your plan.</p>
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <a href="/" class="btn btn-primary btn-lg">Go to Dashboard</a>
+                        <a href="/api/docs" class="btn btn-outline-primary">View API Documentation</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="py-4 bg-light">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8 text-center">
+                    <h3 class="mb-4">Your receipt has been sent to your email</h3>
+                    <p class="text-muted">If you have any questions about your subscription, please contact our support
+                        team.</p>
+                    <a href="/contact" class="btn btn-outline-primary mt-2">Contact Support</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</body>
+
+
+{% endblock %}

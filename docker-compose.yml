@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  dataforge:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    restart: unless-stopped

@@ -1,0 +1,918 @@
+<!-- templates/dashboard.html -->
+{% extends "base.html" %}
+
+{% block title %}My Account - DataForge{% endblock %}
+
+{% block content %}
+
+
+<body>
+    <div class="container py-5">
+        <div class="row">
+            <!-- Sidebar Navigation -->
+            <div class="col-md-3 mb-4">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">My Account</h5>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <a href="#overview" class="list-group-item list-group-item-action active"
+                            data-bs-toggle="tab">Overview</a>
+                        <a href="#subscription" class="list-group-item list-group-item-action"
+                            data-bs-toggle="tab">Subscription</a>
+                        <a href="#api-keys" class="list-group-item list-group-item-action" data-bs-toggle="tab">API
+                            Keys</a>
+                        <a href="#usage" class="list-group-item list-group-item-action" data-bs-toggle="tab">Usage</a>
+                        <a href="#profile" class="list-group-item list-group-item-action"
+                            data-bs-toggle="tab">Profile</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9">
+                <div class="tab-content">
+                    <!-- Overview Tab -->
+                    <div class="tab-pane fade show active" id="overview">
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-body p-4">
+                                <h3 class="card-title mb-4">Dashboard Overview</h3>
+
+                                <div class="row g-4">
+                                    <!-- Subscription Card -->
+                                    <div class="col-md-6">
+                                        <div class="card h-100 border-0 bg-light">
+                                            <div class="card-body">
+                                                <h5 class="card-title">
+                                                    <i class="bi bi-credit-card text-primary me-2"></i>
+                                                    Current Plan
+                                                </h5>
+                                                <div class="mt-3">
+                                                    <h3 class="text-primary" id="current-plan">Pro</h3>
+                                                    <p class="text-muted mb-0" id="plan-details">500 conversions per
+                                                        month</p>
+                                                </div>
+                                                <div class="mt-3">
+                                                    <a href="#subscription" class="btn btn-outline-primary btn-sm"
+                                                        data-bs-toggle="tab">Manage Subscription</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Usage Card -->
+                                    <div class="col-md-6">
+                                        <div class="card h-100 border-0 bg-light">
+                                            <div class="card-body">
+                                                <h5 class="card-title">
+                                                    <i class="bi bi-graph-up text-primary me-2"></i>
+                                                    Usage
+                                                </h5>
+                                                <div class="mt-3">
+                                                    <div>
+                                                        <span
+                                                            class="d-flex justify-content-between align-items-center mb-1">
+                                                            <span>Conversions Used</span>
+                                                            <span class="text-primary" id="usage-ratio">124 / 500</span>
+                                                        </span>
+                                                        <div class="progress" style="height: 10px;">
+                                                            <div class="progress-bar" role="progressbar"
+                                                                style="width: 25%;" id="usage-progress"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-3">
+                                                    <p class="text-muted mb-0">Resets on <span id="reset-date">April 15,
+                                                            2025</span></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- API Keys Card -->
+                                    <div class="col-md-6">
+                                        <div class="card h-100 border-0 bg-light">
+                                            <div class="card-body">
+                                                <h5 class="card-title">
+                                                    <i class="bi bi-key text-primary me-2"></i>
+                                                    API Keys
+                                                </h5>
+                                                <div class="mt-3">
+                                                    <p>You have <span class="text-primary fw-bold"
+                                                            id="api-key-count">2</span> active API keys</p>
+                                                </div>
+                                                <div class="mt-3">
+                                                    <a href="#api-keys" class="btn btn-outline-primary btn-sm"
+                                                        data-bs-toggle="tab">Manage Keys</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Recent Activity Card -->
+                                    <div class="col-md-6">
+                                        <div class="card h-100 border-0 bg-light">
+                                            <div class="card-body">
+                                                <h5 class="card-title">
+                                                    <i class="bi bi-clock-history text-primary me-2"></i>
+                                                    Recent Activity
+                                                </h5>
+                                                <div class="mt-3">
+                                                    <ul class="list-unstyled">
+                                                        <li class="mb-2 text-truncate">
+                                                            <small class="text-muted me-2">Today, 2:34 PM</small>
+                                                            Converted <strong>customers.csv</strong> to JSON
+                                                        </li>
+                                                        <li class="mb-2 text-truncate">
+                                                            <small class="text-muted me-2">Today, 11:15 AM</small>
+                                                            Generated new API key
+                                                        </li>
+                                                        <li class="text-truncate">
+                                                            <small class="text-muted me-2">Yesterday</small>
+                                                            Converted <strong>sales_data.xlsx</strong> to CSV
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card shadow-sm">
+                            <div class="card-body p-4">
+                                <h3 class="card-title mb-4">Quick Actions</h3>
+
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <a href="/" class="btn btn-primary d-block py-3">
+                                            <i class="bi bi-arrow-repeat me-2"></i>
+                                            Convert Data
+                                        </a>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <a href="#api-keys" class="btn btn-outline-primary d-block py-3"
+                                            data-bs-toggle="tab">
+                                            <i class="bi bi-key me-2"></i>
+                                            Generate API Key
+                                        </a>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <a href="/api-docs" class="btn btn-outline-primary d-block py-3">
+                                            <i class="bi bi-file-earmark-code me-2"></i>
+                                            View API Docs
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subscription Tab -->
+                    <div class="tab-pane fade" id="subscription">
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-body p-4">
+                                <h3 class="card-title mb-4">Subscription Management</h3>
+
+                                <div class="alert alert-primary d-flex align-items-center" role="alert">
+                                    <i class="bi bi-info-circle-fill me-2"></i>
+                                    <div>
+                                        You are currently on the <strong id="current-plan-name">Pro</strong> plan.
+                                    </div>
+                                </div>
+
+                                <div class="card border-primary mb-4">
+                                    <div class="card-header bg-primary text-white">
+                                        <h5 class="mb-0">Current Plan Details</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p><strong>Plan:</strong> <span id="plan-name">Pro</span></p>
+                                                <p><strong>Price:</strong> <span id="plan-price">$24.99/month</span></p>
+                                                <p><strong>Status:</strong> <span class="badge bg-success"
+                                                        id="plan-status">Active</span></p>
+                                                <p><strong>Next billing date:</strong> <span
+                                                        id="next-billing-date">April 15, 2025</span></p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p><strong>Conversions:</strong> <span id="plan-conversions">500 per
+                                                        month</span></p>
+                                                <p><strong>File size limit:</strong> <span
+                                                        id="plan-file-limit">100MB</span></p>
+                                                <p><strong>API access:</strong> <span id="plan-api">Advanced API
+                                                        access</span></p>
+                                                <p><strong>Support:</strong> <span id="plan-support">Priority
+                                                        support</span></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <h4 class="mb-3">Change Plan</h4>
+
+                                <div class="row g-4 mb-4">
+                                    <!-- Basic Plan -->
+                                    <div class="col-md-4">
+                                        <div class="card h-100">
+                                            <div class="card-header">
+                                                <h5 class="mb-0">Basic</h5>
+                                            </div>
+                                            <div class="card-body d-flex flex-column">
+                                                <h2 class="card-title mb-4">$9.99<small
+                                                        class="text-muted fw-light">/mo</small></h2>
+                                                <ul class="list-unstyled mb-4">
+                                                    <li class="mb-2"><i
+                                                            class="bi bi-check-circle-fill text-success me-2"></i>100
+                                                        conversions/month</li>
+                                                    <li class="mb-2"><i
+                                                            class="bi bi-check-circle-fill text-success me-2"></i>50MB
+                                                        file size limit</li>
+                                                    <li class="mb-2"><i
+                                                            class="bi bi-check-circle-fill text-success me-2"></i>API
+                                                        access</li>
+                                                    <li class="mb-2"><i
+                                                            class="bi bi-check-circle-fill text-success me-2"></i>Email
+                                                        support</li>
+                                                </ul>
+                                                <div class="mt-auto">
+                                                    <button class="btn btn-outline-primary w-100"
+                                                        id="downgrade-basic-btn">Downgrade</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Pro Plan -->
+                                    <div class="col-md-4">
+                                        <div class="card h-100 border-primary">
+                                            <div class="card-header bg-primary text-white">
+                                                <h5 class="mb-0">Pro</h5>
+                                                <span
+                                                    class="badge bg-warning text-dark position-absolute top-0 end-0 mt-2 me-2">Current
+                                                    Plan</span>
+                                            </div>
+                                            <div class="card-body d-flex flex-column">
+                                                <h2 class="card-title mb-4">$24.99<small
+                                                        class="text-muted fw-light">/mo</small></h2>
+                                                <ul class="list-unstyled mb-4">
+                                                    <li class="mb-2"><i
+                                                            class="bi bi-check-circle-fill text-success me-2"></i>500
+                                                        conversions/month</li>
+                                                    <li class="mb-2"><i
+                                                            class="bi bi-check-circle-fill text-success me-2"></i>100MB
+                                                        file size limit</li>
+                                                    <li class="mb-2"><i
+                                                            class="bi bi-check-circle-fill text-success me-2"></i>Advanced
+                                                        API access</li>
+                                                    <li class="mb-2"><i
+                                                            class="bi bi-check-circle-fill text-success me-2"></i>Priority
+                                                        support</li>
+                                                </ul>
+                                                <div class="mt-auto">
+                                                    <button class="btn btn-primary w-100" disabled>Current Plan</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Enterprise Plan -->
+                                    <div class="col-md-4">
+                                        <div class="card h-100">
+                                            <div class="card-header bg-dark text-white">
+                                                <h5 class="mb-0">Enterprise</h5>
+                                            </div>
+                                            <div class="card-body d-flex flex-column">
+                                                <h2 class="card-title mb-4">$99.99<small
+                                                        class="text-muted fw-light">/mo</small></h2>
+                                                <ul class="list-unstyled mb-4">
+                                                    <li class="mb-2"><i
+                                                            class="bi bi-check-circle-fill text-success me-2"></i>Unlimited
+                                                        conversions</li>
+                                                    <li class="mb-2"><i
+                                                            class="bi bi-check-circle-fill text-success me-2"></i>500MB
+                                                        file size limit</li>
+                                                    <li class="mb-2"><i
+                                                            class="bi bi-check-circle-fill text-success me-2"></i>Full
+                                                        API access</li>
+                                                    <li class="mb-2"><i
+                                                            class="bi bi-check-circle-fill text-success me-2"></i>Dedicated
+                                                        support</li>
+                                                </ul>
+                                                <div class="mt-auto">
+                                                    <button class="btn btn-dark w-100"
+                                                        id="upgrade-enterprise-btn">Upgrade</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card bg-light border-0 mt-4">
+                                    <div class="card-body">
+                                        <h5>Subscription Management</h5>
+                                        <p class="mb-3">Need to make additional changes to your subscription?</p>
+                                        <button class="btn btn-outline-danger" id="cancel-subscription-btn">Cancel
+                                            Subscription</button>
+                                        <a href="/contact" class="btn btn-outline-primary ms-2">Contact Support</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- API Keys Tab -->
+                    <div class="tab-pane fade" id="api-keys">
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-body p-4">
+                                <h3 class="card-title mb-4">API Keys</h3>
+
+                                <div class="alert alert-info d-flex" role="alert">
+                                    <i class="bi bi-info-circle-fill me-2 flex-shrink-0"></i>
+                                    <div>
+                                        API keys allow programmatic access to DataForge's conversion services. Your plan
+                                        allows you to create up to <strong>5 API keys</strong>.
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <button class="btn btn-primary" data-bs-toggle="modal"
+                                        data-bs-target="#createKeyModal">
+                                        <i class="bi bi-plus-circle me-2"></i>
+                                        Create New API Key
+                                    </button>
+                                </div>
+
+                                <!-- API Keys Table -->
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="api-keys-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Key</th>
+                                                <th>Created</th>
+                                                <th>Last Used</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Development Key</td>
+                                                <td><code>df_721a8b3c49...f1e5</code></td>
+                                                <td>March 15, 2025</td>
+                                                <td>Today, 2:34 PM</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+                                                        data-bs-target="#revokeKeyModal">
+                                                        Revoke
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Production Key</td>
+                                                <td><code>df_3e9f24db78...a2c7</code></td>
+                                                <td>March 5, 2025</td>
+                                                <td>Today, 9:17 AM</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+                                                        data-bs-target="#revokeKeyModal">
+                                                        Revoke
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="card bg-light border-0 mt-4">
+                                    <div class="card-body">
+                                        <h5>API Documentation</h5>
+                                        <p>Learn how to use the DataForge API with our comprehensive documentation.</p>
+                                        <a href="/api-docs" class="btn btn-outline-primary">View API Documentation</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Usage Tab -->
+                    <div class="tab-pane fade" id="usage">
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-body p-4">
+                                <h3 class="card-title mb-4">Usage Statistics</h3>
+
+                                <div class="row">
+                                    <div class="col-lg-6">
+                                        <div class="card mb-4">
+                                            <div class="card-header bg-light">
+                                                <h5 class="mb-0">Monthly Usage</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="mb-4">
+                                                    <h6 class="d-flex justify-content-between">
+                                                        <span>Conversions Used</span>
+                                                        <span class="text-primary">124 / 500</span>
+                                                    </h6>
+                                                    <div class="progress" style="height: 12px;">
+                                                        <div class="progress-bar" role="progressbar" style="width: 25%;"
+                                                            aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">
+                                                        </div>
+                                                    </div>
+                                                    <small class="text-muted">24.8% used</small>
+                                                </div>
+
+                                                <div class="mb-4">
+                                                    <h6 class="d-flex justify-content-between">
+                                                        <span>API Requests</span>
+                                                        <span class="text-primary">87 / 1,000</span>
+                                                    </h6>
+                                                    <div class="progress" style="height: 12px;">
+                                                        <div class="progress-bar" role="progressbar"
+                                                            style="width: 8.7%;" aria-valuenow="8.7" aria-valuemin="0"
+                                                            aria-valuemax="100"></div>
+                                                    </div>
+                                                    <small class="text-muted">8.7% used</small>
+                                                </div>
+
+                                                <div>
+                                                    <p class="text-muted">Billing period: <strong>March 15 - April 15,
+                                                            2025</strong></p>
+                                                    <p class="text-muted mb-0">Your limits will reset in <strong>28
+                                                            days</strong>.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-lg-6">
+                                        <div class="card mb-4">
+                                            <div class="card-header bg-light">
+                                                <h5 class="mb-0">Format Usage</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <canvas id="format-chart" width="400" height="250"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card">
+                                    <div class="card-header bg-light">
+                                        <h5 class="mb-0">Recent Conversions</h5>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>File</th>
+                                                    <th>From</th>
+                                                    <th>To</th>
+                                                    <th>Size</th>
+                                                    <th>Source</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>Today, 2:34 PM</td>
+                                                    <td>customers.csv</td>
+                                                    <td>CSV</td>
+                                                    <td>JSON</td>
+                                                    <td>25.4 KB</td>
+                                                    <td>Web UI</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Today, 9:17 AM</td>
+                                                    <td>inventory.json</td>
+                                                    <td>JSON</td>
+                                                    <td>Excel</td>
+                                                    <td>42.1 KB</td>
+                                                    <td>API</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Yesterday, 4:51 PM</td>
+                                                    <td>sales_data.xlsx</td>
+                                                    <td>Excel</td>
+                                                    <td>CSV</td>
+                                                    <td>128.7 KB</td>
+                                                    <td>Web UI</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>March 16, 2025</td>
+                                                    <td>products.xml</td>
+                                                    <td>XML</td>
+                                                    <td>JSON</td>
+                                                    <td>76.3 KB</td>
+                                                    <td>API</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>March 15, 2025</td>
+                                                    <td>user_data.yaml</td>
+                                                    <td>YAML</td>
+                                                    <td>JSON</td>
+                                                    <td>18.9 KB</td>
+                                                    <td>Web UI</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profile Tab -->
+                    <div class="tab-pane fade" id="profile">
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-body p-4">
+                                <h3 class="card-title mb-4">Profile Information</h3>
+
+                                <form id="profile-form">
+                                    <div class="mb-3">
+                                        <label for="full-name" class="form-label">Full Name</label>
+                                        <input type="text" class="form-control" id="full-name" value="John Doe">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="email" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="email" value="john.doe@example.com"
+                                            readonly>
+                                        <div class="form-text">Email address cannot be changed. Contact support if you
+                                            need to update it.</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="company" class="form-label">Company (Optional)</label>
+                                        <input type="text" class="form-control" id="company" value="Acme Inc.">
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-body p-4">
+                                <h3 class="card-title mb-4">Change Password</h3>
+
+                                <form id="password-form">
+                                    <div class="mb-3">
+                                        <label for="current-password" class="form-label">Current Password</label>
+                                        <input type="password" class="form-control" id="current-password">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="new-password" class="form-label">New Password</label>
+                                        <input type="password" class="form-control" id="new-password">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="confirm-password" class="form-label">Confirm New Password</label>
+                                        <input type="password" class="form-control" id="confirm-password">
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary">Update Password</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="card shadow-sm">
+                            <div class="card-body p-4">
+                                <h3 class="card-title mb-4">Account Security</h3>
+
+                                <div class="mb-4">
+                                    <h5>Login History</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>IP Address</th>
+                                                    <th>Location</th>
+                                                    <th>Device</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>Today, 9:12 AM</td>
+                                                    <td>192.168.1.1</td>
+                                                    <td>New York, USA</td>
+                                                    <td>Chrome on Windows</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>March 16, 2025</td>
+                                                    <td>192.168.1.1</td>
+                                                    <td>New York, USA</td>
+                                                    <td>Chrome on Windows</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>March 15, 2025</td>
+                                                    <td>192.168.1.1</td>
+                                                    <td>New York, USA</td>
+                                                    <td>Firefox on MacOS</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <h5>Account Actions</h5>
+                                    <button class="btn btn-outline-danger" data-bs-toggle="modal"
+                                        data-bs-target="#deleteAccountModal">Delete Account</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create API Key Modal -->
+    <div class="modal fade" id="createKeyModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New API Key</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="create-key-form">
+                        <div class="mb-3">
+                            <label for="key-name" class="form-label">Key Name</label>
+                            <input type="text" class="form-control" id="key-name"
+                                placeholder="e.g., Development, Production" required>
+                            <div class="form-text">Give your API key a descriptive name to identify its purpose.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Permissions</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="perm-convert" checked disabled>
+                                <label class="form-check-label" for="perm-convert">
+                                    Data Conversion
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="perm-read">
+                                <label class="form-check-label" for="perm-read">
+                                    Read Usage Statistics
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        This key will be shown only once. Store it securely as you won't be able to see it again.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="create-key-btn">Create API Key</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Key Created Modal -->
+    <div class="modal fade" id="keyCreatedModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">API Key Created</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        Your new API key has been created successfully.
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">API Key</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="new-api-key" value="df_sample1234567890abcdef"
+                                readonly>
+                            <button class="btn btn-outline-secondary" type="button" id="copy-key-btn">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                        <div class="form-text text-danger">
+                            Save this key now. You won't be able to see it again.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Done</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Revoke API Key Modal -->
+    <div class="modal fade" id="revokeKeyModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Revoke API Key</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Are you sure you want to revoke this API key? This action cannot be undone.
+                    </div>
+                    <p>Revoking this key will immediately invalidate it. Any applications or scripts using this key will
+                        no longer be able to access the DataForge API.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirm-revoke-btn">Revoke Key</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Account Modal -->
+    <div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Account</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Warning: This action is permanent and cannot be undone.
+                    </div>
+                    <p>Deleting your account will:</p>
+                    <ul>
+                        <li>Cancel your subscription</li>
+                        <li>Delete all your API keys</li>
+                        <li>Remove all your usage history</li>
+                        <li>Delete your profile information</li>
+                    </ul>
+                    <div class="mb-3">
+                        <label for="delete-confirm" class="form-label">Type "DELETE" to confirm</label>
+                        <input type="text" class="form-control" id="delete-confirm" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirm-delete-btn" disabled>Delete
+                        Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // Format Usage Chart
+            const ctx = document.getElementById('format-chart').getContext('2d');
+            const formatChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['CSV to JSON', 'JSON to Excel', 'Excel to CSV', 'XML to JSON', 'YAML to JSON'],
+                    datasets: [{
+                        data: [45, 25, 20, 15, 10],
+                        backgroundColor: [
+                            '#4e73df',
+                            '#1cc88a',
+                            '#36b9cc',
+                            '#f6c23e',
+                            '#e74a3b'
+                        ],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Create API Key Button
+            document.getElementById('create-key-btn').addEventListener('click', function () {
+                const keyName = document.getElementById('key-name').value;
+                if (!keyName) {
+                    alert('Please enter a key name');
+                    return;
+                }
+
+                // In a real app, you would call your API to create a key
+                // For now, we'll just show the success modal
+                $('#createKeyModal').modal('hide');
+                $('#keyCreatedModal').modal('show');
+            });
+
+            // Copy API Key Button
+            document.getElementById('copy-key-btn').addEventListener('click', function () {
+                const keyInput = document.getElementById('new-api-key');
+                keyInput.select();
+                document.execCommand('copy');
+
+                // Show feedback
+                this.innerHTML = '<i class="bi bi-check"></i>';
+                setTimeout(() => {
+                    this.innerHTML = '<i class="bi bi-clipboard"></i>';
+                }, 2000);
+            });
+
+            // Confirm Revoke Button
+            document.getElementById('confirm-revoke-btn').addEventListener('click', function () {
+                // In a real app, you would call your API to revoke the key
+                // For now, we'll just close the modal
+                $('#revokeKeyModal').modal('hide');
+
+                // Show feedback
+                alert('API Key has been revoked');
+            });
+
+            // Delete Account Confirmation
+            document.getElementById('delete-confirm').addEventListener('input', function () {
+                const deleteBtn = document.getElementById('confirm-delete-btn');
+                deleteBtn.disabled = this.value !== 'DELETE';
+            });
+
+            // Confirm Delete Button
+            document.getElementById('confirm-delete-btn').addEventListener('click', function () {
+                // In a real app, you would call your API to delete the account
+                // For now, we'll just redirect to the login page
+                $('#deleteAccountModal').modal('hide');
+                localStorage.removeItem('auth_token');
+                window.location.href = '/login';
+            });
+
+            // Plan Change Buttons
+            document.getElementById('downgrade-basic-btn').addEventListener('click', function () {
+                if (confirm('Are you sure you want to downgrade to the Basic plan? Your new limits will take effect at the end of your current billing cycle.')) {
+                    // In a real app, you would call your API to change the plan
+                    alert('Your plan will be downgraded to Basic at the end of your current billing cycle.');
+                }
+            });
+
+            document.getElementById('upgrade-enterprise-btn').addEventListener('click', function () {
+                if (confirm('Are you sure you want to upgrade to the Enterprise plan? You will be charged the difference immediately.')) {
+                    // In a real app, you would redirect to a Stripe checkout page
+                    alert('Redirecting to payment page...');
+                }
+            });
+
+            // Cancel Subscription Button
+            document.getElementById('cancel-subscription-btn').addEventListener('click', function () {
+                if (confirm('Are you sure you want to cancel your subscription? Your account will be downgraded to the free plan at the end of your current billing cycle.')) {
+                    // In a real app, you would call your API to cancel the subscription
+                    alert('Your subscription has been canceled. Your account will be downgraded at the end of your current billing cycle.');
+                }
+            });
+
+            // Save Profile Form
+            document.getElementById('profile-form').addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                // In a real app, you would call your API to update the profile
+                alert('Profile updated successfully');
+            });
+
+            // Change Password Form
+            document.getElementById('password-form').addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const currentPassword = document.getElementById('current-password').value;
+                const newPassword = document.getElementById('new-password').value;
+                const confirmPassword = document.getElementById('confirm-password').value;
+
+                if (!currentPassword || !newPassword || !confirmPassword) {
+                    alert('Please fill in all password fields');
+                    return;
+                }
+
+                if (newPassword !== confirmPassword) {
+                    alert('New passwords do not match');
+                    return;
+                }
+
+                // In a real app, you would call your API to change the password
+                alert('Password changed successfully');
+
+                // Reset form
+                this.reset();
+            });
+        });
+    </script>
+</body>
+
+
+{% endblock %}

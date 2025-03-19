@@ -1,0 +1,249 @@
+<!-- templates/index.html -->
+
+{% extends "base.html" %}
+
+{% block title %}DataForge - Data Conversion Tool{% endblock %}
+
+{% block content %}
+
+<body>
+
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0">Data Format Converter</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="conversion-form">
+                            <!-- Drag & Drop Area -->
+                            <div class="mb-4">
+                                <label class="form-label">Upload File</label>
+                                <div class="drag-area" id="drop-area">
+                                    <div class="icon">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                    </div>
+                                    <p>Drag & Drop file here or <span>Browse Files</span></p>
+                                    <input type="file" id="file-input" hidden>
+                                </div>
+                                <div class="selected-file mt-2" id="file-info"></div>
+                            </div>
+
+                            <!-- Target Format -->
+                            <div class="mb-4">
+                                <label for="to-format" class="form-label">Convert To</label>
+                                <select class="form-select" id="to-format" name="to_format" required>
+                                    <option value="" selected disabled>Select output format</option>
+                                    <option value="csv">CSV</option>
+                                    <option value="json">JSON</option>
+                                    <option value="excel">Excel</option>
+                                    <option value="xml">XML</option>
+                                    <option value="yaml">YAML</option>
+                                </select>
+                            </div>
+
+                            <!-- Transformations -->
+                            <div class="mb-4">
+                                <label class="form-label">Data Transformations</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="remove-empty-rows"
+                                        name="remove_empty_rows_flag">
+                                    <label class="form-check-label" for="remove-empty-rows">
+                                        Remove Empty Rows
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="remove-empty-cols"
+                                        name="remove_empty_cols_flag">
+                                    <label class="form-check-label" for="remove-empty-cols">
+                                        Remove Empty Columns
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="standardize-names"
+                                        name="standardize_names_flag">
+                                    <label class="form-check-label" for="standardize-names">
+                                        Standardize Column Names
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="trim-whitespace"
+                                        name="trim_whitespace_flag">
+                                    <label class="form-check-label" for="trim-whitespace">
+                                        Trim Whitespace
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="deduplicate"
+                                        name="deduplicate_flag">
+                                    <label class="form-check-label" for="deduplicate">
+                                        Remove Duplicate Rows
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary" id="convert-btn">Convert</button>
+                            </div>
+                        </form>
+
+                        <!-- Progress Area -->
+                        <div class="progress-area mt-4" id="progress-area" style="display: none;">
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                    style="width: 100%"></div>
+                            </div>
+                            <p class="text-center mt-2">Converting your file...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const dropArea = document.getElementById('drop-area');
+            const fileInput = document.getElementById('file-input');
+            const fileInfo = document.getElementById('file-info');
+            const conversionForm = document.getElementById('conversion-form');
+            const progressArea = document.getElementById('progress-area');
+
+            // Open file browser when clicking on drop area
+            dropArea.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // Handle file selection
+            fileInput.addEventListener('change', function () {
+                if (this.files.length > 0) {
+                    showFileInfo(this.files[0]);
+                }
+            });
+
+            // Prevent default drag behaviors
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+
+            // Highlight drop area when dragging over it
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            // Handle dropped files
+            dropArea.addEventListener('drop', handleDrop, false);
+
+            // Handle form submission
+            conversionForm.addEventListener('submit', handleSubmit);
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            function highlight() {
+                dropArea.classList.add('active');
+            }
+
+            function unhighlight() {
+                dropArea.classList.remove('active');
+            }
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    showFileInfo(files[0]);
+                }
+            }
+
+            function showFileInfo(file) {
+                const fileSize = (file.size / 1024).toFixed(2) + ' KB';
+                fileInfo.innerHTML = `
+                    <div class="alert alert-info">
+                        <strong>File:</strong> ${file.name}<br>
+                        <strong>Type:</strong> ${file.type}<br>
+                        <strong>Size:</strong> ${fileSize}
+                    </div>
+                `;
+            }
+
+            function handleSubmit(e) {
+                e.preventDefault();
+
+                const file = fileInput.files[0];
+                if (!file) {
+                    alert('Please select a file to convert');
+                    return;
+                }
+
+                const toFormat = document.getElementById('to-format').value;
+                if (!toFormat) {
+                    alert('Please select an output format');
+                    return;
+                }
+
+                // Show progress
+                progressArea.style.display = 'block';
+
+                // Prepare form data
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('to_format', toFormat);
+
+                // Add transformation flags
+                document.querySelectorAll('.form-check-input').forEach(checkbox => {
+                    formData.append(checkbox.name, checkbox.checked);
+                });
+
+                // Send the request
+                fetch('/api/convert', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => {
+                                throw new Error(err.detail || 'Conversion failed');
+                            });
+                        }
+
+                        // Get filename from the response header
+                        const contentDisposition = response.headers.get('Content-Disposition');
+                        const filenameMatch = contentDisposition && contentDisposition.match(/filename="?([^"]*)"?/);
+                        const filename = filenameMatch ? filenameMatch[1] : `converted.${toFormat}`;
+
+                        return response.blob().then(blob => {
+                            // Create download link
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            a.remove();
+                        });
+                    })
+                    .catch(error => {
+                        alert('Error: ' + error.message);
+                    })
+                    .finally(() => {
+                        progressArea.style.display = 'none';
+                    });
+            }
+        });
+    </script>
+</body>
+
+{% endblock %}
